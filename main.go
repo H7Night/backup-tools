@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -34,11 +35,19 @@ func initTab1() *fyne.Container {
 	deviceSelect := widget.NewSelect(deviceList, func(value string) {
 		fmt.Println("Selected device: ", value)
 	})
+	// 加载配置
+	conf, err := a2.LoadConfig()
+	if err != nil {
+		println(err)
+	}
 
 	srcDir := widget.NewEntry()
 	srcDir.SetPlaceHolder("Enter source on device")
 	destDir := widget.NewEntry()
 	destDir.SetPlaceHolder("Enter destination on local")
+
+	srcDir.Text = conf.SrcDir
+	destDir.Text = conf.DestDir
 
 	// 刷新设备按钮
 	getDevicesBtn := widget.NewButton("Refresh", func() {
@@ -80,8 +89,39 @@ func initTab1() *fyne.Container {
 }
 
 func initTab2() *fyne.Container {
+	// 读取配置
+	config, err := a2.LoadConfig()
+	if err != nil {
+		fmt.Println("Error loading config:", err)
+		return container.NewVBox(widget.NewLabel("Failed to load configuration"))
+	}
+
+	cSrcDir := binding.NewString()
+	cSrcDir.Set(config.SrcDir)
+	cDestDir := binding.NewString()
+	cDestDir.Set(config.DestDir)
+
+	confSrcDir := widget.NewEntryWithData(cSrcDir)
+	confDestDir := widget.NewEntryWithData(cDestDir)
+
+	saveBtn := widget.NewButton("Save", func() {
+		srcDir, _ := cSrcDir.Get()
+		destDir, _ := cDestDir.Get()
+		config.SrcDir = srcDir
+		config.DestDir = destDir
+
+		err := a2.SaveConfig(config)
+		if err != nil {
+			fmt.Println("Save config error:", err)
+		} else {
+			fmt.Println("Save successfully")
+		}
+	})
+
 	t2 := container.NewVBox(
-		widget.NewLabel("Hello"),
+		confSrcDir,
+		confDestDir,
+		saveBtn,
 	)
 	return t2
 }
