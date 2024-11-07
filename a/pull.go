@@ -7,11 +7,11 @@ import (
 
 func CopyFilesToLocal(deviceID, remotePath, localPath string) error {
 	cmd := exec.Command("adb", "-s", deviceID, "pull", remotePath, localPath)
+	println("执行命令：", cmd)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("Error: %s\n", output)
+		fmt.Printf("错误: %s\n", output)
 		return fmt.Errorf("%w", err)
 	}
-	fmt.Printf("Command output: %s\n", string(output)) // 输出成功信息
 	return nil
 }

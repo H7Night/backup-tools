@@ -24,16 +24,14 @@ func main() {
 	w.SetContent(container.NewVBox(
 		tabs,
 	))
+	w.Resize(fyne.NewSize(480, 360))
 	w.ShowAndRun()
 }
-
-// /sdcard/Download/test.txt
-// /Users/jhonhe/Downloads
 
 func initTab1() *fyne.Container {
 	deviceList := a2.GetConnectedDevices()
 	deviceSelect := widget.NewSelect(deviceList, func(value string) {
-		fmt.Println("Selected device: ", value)
+		fmt.Println("选择设备: ", value)
 	})
 	// 加载配置
 	conf, err := a2.LoadConfig()
@@ -42,15 +40,15 @@ func initTab1() *fyne.Container {
 	}
 
 	srcDir := widget.NewEntry()
-	srcDir.SetPlaceHolder("Enter source on device")
+	srcDir.SetPlaceHolder("输入源目录/文件")
 	destDir := widget.NewEntry()
-	destDir.SetPlaceHolder("Enter destination on local")
+	destDir.SetPlaceHolder("输入保存目录")
 
 	srcDir.Text = conf.SrcDir
 	destDir.Text = conf.DestDir
 
 	// 刷新设备按钮
-	getDevicesBtn := widget.NewButton("Refresh", func() {
+	getDevicesBtn := widget.NewButton("刷新", func() {
 		deviceList = a2.GetConnectedDevices()
 		deviceSelect.Options = deviceList
 		deviceSelect.Refresh()
@@ -61,23 +59,23 @@ func initTab1() *fyne.Container {
 			}
 		} else {
 			deviceSelect.Selected = ""
-			fmt.Println("no devices founded!")
+			fmt.Println("没有找到可用设备")
 		}
 	})
 
-	copyBtn := widget.NewButton("Copy", func() {
+	copyBtn := widget.NewButton("拷贝", func() {
 		deviceID := deviceSelect.Selected
 		if deviceID == "" {
-			fmt.Println("No device selected")
+			fmt.Println("没有选择设备")
 			return
 		}
 		srcPath := srcDir.Text
 		destPath := destDir.Text
 		err := a2.CopyFilesToLocal(deviceID, srcPath, destPath)
 		if err != nil {
-			fmt.Println("Error copying:", err)
+			fmt.Println("拷贝失败:", err)
 		} else {
-			fmt.Println("Copy successfully")
+			fmt.Println("成功")
 		}
 	})
 	t1 := container.NewVBox(
@@ -92,8 +90,8 @@ func initTab2() *fyne.Container {
 	// 读取配置
 	config, err := a2.LoadConfig()
 	if err != nil {
-		fmt.Println("Error loading config:", err)
-		return container.NewVBox(widget.NewLabel("Failed to load configuration"))
+		fmt.Println("加载配置失败:", err)
+		return container.NewVBox(widget.NewLabel("加载配置失败"))
 	}
 
 	cSrcDir := binding.NewString()
@@ -104,7 +102,7 @@ func initTab2() *fyne.Container {
 	confSrcDir := widget.NewEntryWithData(cSrcDir)
 	confDestDir := widget.NewEntryWithData(cDestDir)
 
-	saveBtn := widget.NewButton("Save", func() {
+	saveBtn := widget.NewButton("保存", func() {
 		srcDir, _ := cSrcDir.Get()
 		destDir, _ := cDestDir.Get()
 		config.SrcDir = srcDir
@@ -112,9 +110,9 @@ func initTab2() *fyne.Container {
 
 		err := a2.SaveConfig(config)
 		if err != nil {
-			fmt.Println("Save config error:", err)
+			fmt.Println("保存配置失败:", err)
 		} else {
-			fmt.Println("Save successfully")
+			fmt.Println("保存配置成功")
 		}
 	})
 

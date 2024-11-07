@@ -8,9 +8,11 @@ import (
 
 func GetConnectedDevices() []string {
 	cmd := exec.Command("adb", "devices")
+	fmt.Printf("执行命令: %s\n", cmd)
 	output, err := cmd.CombinedOutput()
+
 	if err != nil {
-		fmt.Println("Error fetching device:", err)
+		fmt.Println("拉取设备失败", err)
 		return []string{}
 	}
 	lines := strings.Split(string(output), "\n")
