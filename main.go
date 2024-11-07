@@ -1,10 +1,10 @@
 package main
 
 import (
+	a2 "backup-tools/a"
 	"fmt"
-	"os/exec"
-	"strings"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -13,25 +13,46 @@ import (
 func main() {
 	a := app.New()
 	w := a.NewWindow("backup-tools")
+	t1 := initTab1()
+	t2 := initTab2()
+	tabs := container.NewAppTabs(
+		container.NewTabItem("Tab 1", t1),
+		container.NewTabItem("Tab 2", t2),
+	)
+	tabs.SetTabLocation(container.TabLocationTop)
+	w.SetContent(container.NewVBox(
+		tabs,
+	))
+	w.ShowAndRun()
+}
 
-	deviceList := getConnectedDevices()
+// /sdcard/Download/test.txt
+// /Users/jhonhe/Downloads
+
+func initTab1() *fyne.Container {
+	deviceList := a2.GetConnectedDevices()
 	deviceSelect := widget.NewSelect(deviceList, func(value string) {
 		fmt.Println("Selected device: ", value)
 	})
 
 	srcDir := widget.NewEntry()
-	srcDir.SetPlaceHolder("Enter source directory on device")
+	srcDir.SetPlaceHolder("Enter source on device")
 	destDir := widget.NewEntry()
-	destDir.SetPlaceHolder("Enter destination directory on local machine")
+	destDir.SetPlaceHolder("Enter destination on local")
 
 	// 刷新设备按钮
-	getDevicesBtn := widget.NewButton("Refresh Devices", func() {
-		deviceList = getConnectedDevices() // 获取最新的设备列表
-		deviceSelect.Options = deviceList  // 更新下拉框选项
-		deviceSelect.Refresh()             // 刷新下拉框以显示新选项
-		fmt.Println("已重新获取设备:")
-		for i, item := range deviceList {
-			fmt.Printf("%d: %s\n", i, item)
+	getDevicesBtn := widget.NewButton("Refresh", func() {
+		deviceList = a2.GetConnectedDevices()
+		deviceSelect.Options = deviceList
+		deviceSelect.Refresh()
+		if deviceList != nil {
+			fmt.Println("已重新获取设备:")
+			for i, item := range deviceList {
+				fmt.Printf("%d: %s\n", i, item)
+			}
+		} else {
+			deviceSelect.Selected = ""
+			fmt.Println("no devices founded!")
 		}
 	})
 
@@ -43,52 +64,24 @@ func main() {
 		}
 		srcPath := srcDir.Text
 		destPath := destDir.Text
-		err := copyFilesToLocal(deviceID, srcPath, destPath)
+		err := a2.CopyFilesToLocal(deviceID, srcPath, destPath)
 		if err != nil {
 			fmt.Println("Error copying:", err)
 		} else {
 			fmt.Println("Copy successfully")
 		}
 	})
-	w.SetContent(container.NewVBox(
+	t1 := container.NewVBox(
 		container.NewHBox(deviceSelect, getDevicesBtn),
 		srcDir,
 		destDir,
-		copyBtn,
-	))
-	w.ShowAndRun()
+		copyBtn)
+	return t1
 }
 
-func getConnectedDevices() []string {
-	cmd := exec.Command("adb", "devices")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println("Error fetching device:", err)
-		return []string{}
-	}
-	lines := strings.Split(string(output), "\n")
-	var devices []string
-	for _, line := range lines {
-		if strings.Contains(line, "device") && !strings.Contains(line, "List of devices") {
-			fields := strings.Fields(line)
-			if len(fields) > 0 {
-				devices = append(devices, fields[0])
-			}
-		}
-	}
-	return devices
+func initTab2() *fyne.Container {
+	t2 := container.NewVBox(
+		widget.NewLabel("Hello"),
+	)
+	return t2
 }
-
-func copyFilesToLocal(deviceID, remotePath, localPath string) error {
-	cmd := exec.Command("adb", "-s", deviceID, "pull", remotePath, localPath)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("Error: %s\n", output)
-		return fmt.Errorf("%w", err)
-	}
-	fmt.Printf("Command output: %s\n", string(output)) // 输出成功信息
-	return nil
-}
-
-// /sdcard/Download/test.txt
-// /Users/jhonhe/Downloads
