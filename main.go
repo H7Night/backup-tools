@@ -29,9 +29,19 @@ func main() {
 }
 
 func initTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
+
+	// 创建只读的日志标签
+	logContent := ""
+	logLabel := widget.NewLabel(logContent)
+	logLabel.Wrapping = fyne.TextWrapWord // 自动换行
+	// 定义一个滚动容器用于日志标签
+	logScroll := container.NewScroll(logLabel)
+	logScroll.SetMinSize(fyne.NewSize(0, 100)) // 设置日志区域高度
+
 	deviceList := a2.GetConnectedDevices()
 	deviceSelect := widget.NewSelect(deviceList, func(value string) {
 		fmt.Println("选择设备: ", value)
+		logLabel.SetText(logLabel.Text + "\n" + "选择设备:" + value)
 	})
 
 	srcDir := widget.NewEntry()
@@ -46,19 +56,24 @@ func initTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
 		deviceSelect.Refresh()
 		if deviceList != nil {
 			fmt.Println("已重新获取设备:")
+			logLabel.SetText(logLabel.Text + "\n" + "已重新获取设备:")
 			for i, item := range deviceList {
 				fmt.Printf("%d: %s\n", i, item)
+				logLabel.SetText(logLabel.Text + "\n" + item)
 			}
 		} else {
 			deviceSelect.Selected = ""
 			fmt.Println("没有找到可用设备")
+			logLabel.SetText(logLabel.Text + "\n" + "没有选择设备")
 		}
+		logScroll.ScrollToBottom()
 	})
 
 	copyBtn := widget.NewButton("拷贝", func() {
 		deviceID := deviceSelect.Selected
 		if deviceID == "" {
 			fmt.Println("没有选择设备")
+			logLabel.SetText(logLabel.Text + "\n" + "没有选择设备")
 			return
 		}
 		srcPath := srcDir.Text
@@ -66,15 +81,20 @@ func initTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
 		err := a2.CopyFilesToLocal(deviceID, srcPath, destPath)
 		if err != nil {
 			fmt.Println("拷贝失败:", err)
+			logLabel.SetText(logLabel.Text + "\n" + "拷贝失败:" + err.Error())
 		} else {
 			fmt.Println("成功")
+			logLabel.SetText(logLabel.Text + "\n" + "成功")
 		}
+		logScroll.ScrollToBottom()
 	})
 	t1 := container.NewVBox(
 		container.NewHBox(deviceSelect, getDevicesBtn),
 		srcDir,
 		destDir,
-		copyBtn)
+		copyBtn,
+		logScroll,
+	)
 	return t1, srcDir, destDir
 }
 
