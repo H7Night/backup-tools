@@ -1,4 +1,4 @@
-package a
+package tools
 
 import (
 	"fmt"
