@@ -1,2 +1,7 @@
-srcDir: /sdcard/Download
-destDir: /Users/jhonhe/Public
+profiles:
+    files:
+        srcDir: /sdcard/Download
+        destDir: /Users/jhonhe/Files
+    photos:
+        srcDir: /sdcard/Download
+        destDir: /Users/jhonhe/Photos
