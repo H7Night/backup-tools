@@ -1,8 +1,11 @@
 package tools
 
 import (
+	"bufio"
 	"fmt"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -28,13 +31,32 @@ func GetConnectedDevices() []string {
 	return devices
 }
 
-func CopyFilesToLocal(deviceID, remotePath, localPath string) error {
-	cmd := exec.Command("adb", "-s", deviceID, "pull", remotePath, localPath)
-	println("执行命令：", cmd)
-	output, err := cmd.CombinedOutput()
+func CopyFiles(deviceID, srcPath, destPath string, onProgress func(float64)) error {
+	cmd := exec.Command("adb", "-s", deviceID, "pull", srcPath, destPath)
+	fmt.Printf("执行命令：%s\n", cmd)
+
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Printf("错误: %s\n", output)
-		return fmt.Errorf("%w", err)
+		return err
 	}
-	return nil
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(stdout)
+	progressRegex := regexp.MustCompile(`$begin:math:text$(\\d+)%$end:math:text$`) // 匹配类似 "(75%)" 的进度格式
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Println("输出: ", line)
+		match := progressRegex.FindStringSubmatch(line)
+		if len(match) > 1 {
+			percent, _ := strconv.Atoi(match[1])
+			onProgress(float64(percent) / 100) // 将进度百分比传递给回调
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return cmd.Wait()
 }

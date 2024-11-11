@@ -19,7 +19,7 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 	logLabel.Wrapping = fyne.TextWrapWord // 自动换行
 	// 定义一个滚动容器用于日志标签
 	logScroll := container.NewScroll(logLabel)
-	logScroll.SetMinSize(fyne.NewSize(0, 100)) // 设置日志区域高度
+	logScroll.SetMinSize(fyne.NewSize(0, 300)) // 设置日志区域高度
 
 	deviceList := tools.GetConnectedDevices()
 	deviceSelect := widget.NewSelect(deviceList, func(value string) {
@@ -86,6 +86,8 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 	destDirContainer := container.NewBorder(
 		nil, nil, nil, selectDestBtn, destDir)
 
+	progressBar := widget.NewProgressBar()
+	progressBar.Hide()
 	// 拷贝按钮
 	copyBtn := widget.NewButton("拷贝", func() {
 		deviceID := deviceSelect.Selected
@@ -96,15 +98,22 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 		}
 		srcPath := srcDir.Text
 		destPath := destDir.Text
-		err := tools.CopyFilesToLocal(deviceID, srcPath, destPath)
-		if err != nil {
-			fmt.Println("拷贝失败:", err)
-			logLabel.SetText(logLabel.Text + "\n" + "拷贝失败:" + err.Error())
-		} else {
-			fmt.Println("成功")
-			logLabel.SetText(logLabel.Text + "\n" + "成功")
-		}
-		logScroll.ScrollToBottom()
+
+		progressBar.Show() // 显示进度条
+		progressBar.SetValue(0)
+
+		go func() {
+			err := tools.CopyFiles(deviceID, srcPath, destPath, func(progress float64) {
+				progressBar.SetValue(progress) // 更新进度条
+			})
+			if err != nil {
+				fmt.Println("拷贝失败:", err)
+				logLabel.SetText(logLabel.Text + "\n" + "拷贝失败:" + err.Error())
+			} else {
+				fmt.Println("成功")
+				logLabel.SetText(logLabel.Text + "\n" + "成功")
+			}
+		}()
 	})
 
 	t1 := container.NewVBox(
