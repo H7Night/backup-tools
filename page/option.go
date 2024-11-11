@@ -98,22 +98,16 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 		}
 		srcPath := srcDir.Text
 		destPath := destDir.Text
-
-		progressBar.Show() // 显示进度条
-		progressBar.SetValue(0)
-
-		go func() {
-			err := tools.CopyFiles(deviceID, srcPath, destPath, func(progress float64) {
-				progressBar.SetValue(progress) // 更新进度条
-			})
-			if err != nil {
-				fmt.Println("拷贝失败:", err)
-				logLabel.SetText(logLabel.Text + "\n" + "拷贝失败:" + err.Error())
-			} else {
-				fmt.Println("成功")
-				logLabel.SetText(logLabel.Text + "\n" + "成功")
-			}
-		}()
+		logLabel.SetText(logLabel.Text + "\n" + "拷贝ing...")
+		err := tools.CopyFiles(deviceID, srcPath, destPath)
+		if err != nil {
+			fmt.Println("拷贝失败:", err)
+			logLabel.SetText(logLabel.Text + "\n" + "拷贝失败:" + err.Error())
+		} else {
+			fmt.Println("成功")
+			logLabel.SetText(logLabel.Text + "\n" + "成功")
+		}
+		logScroll.ScrollToBottom()
 	})
 
 	t1 := container.NewVBox(
