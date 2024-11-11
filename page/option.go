@@ -14,7 +14,7 @@ import (
 func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 
 	// 创建只读的日志标签
-	logContent := ""
+	logContent := "日志"
 	logLabel := widget.NewLabel(logContent)
 	logLabel.Wrapping = fyne.TextWrapWord // 自动换行
 	// 定义一个滚动容器用于日志标签
@@ -26,6 +26,28 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 		fmt.Println("选择设备: ", value)
 		logLabel.SetText(logLabel.Text + "\n" + "选择设备:" + value)
 	})
+	// 刷新设备按钮
+	getDevicesBtn := widget.NewButton("刷新", func() {
+		deviceList = tools.GetConnectedDevices()
+		deviceSelect.Options = deviceList
+		deviceSelect.Refresh()
+		if deviceList != nil {
+			fmt.Println("已重新获取设备:")
+			logLabel.SetText(logLabel.Text + "\n" + "已重新获取设备:")
+			for i, item := range deviceList {
+				fmt.Printf("%d: %s\n", i, item)
+				logLabel.SetText(logLabel.Text + "\n" + item)
+			}
+		} else {
+			deviceSelect.Selected = ""
+			fmt.Println("没有找到可用设备")
+			logLabel.SetText(logLabel.Text + "\n" + "没有找到可用设备")
+		}
+		logScroll.ScrollToBottom()
+	})
+	// 选择deivce和刷新按钮
+	deviceContainer := container.NewBorder(
+		nil, nil, nil, getDevicesBtn, deviceSelect)
 
 	srcDir := widget.NewEntry()
 	srcDir.SetPlaceHolder("输入源目录/文件")
@@ -60,29 +82,10 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 	})
 	// src和dest 容器,使用 BorderLayout 让按钮和输入框按比例分布
 	srcDirContainer := container.NewBorder(
-		nil, nil, nil, selectSrcBtn, destDir)
+		nil, nil, nil, selectSrcBtn, srcDir)
 	destDirContainer := container.NewBorder(
 		nil, nil, nil, selectDestBtn, destDir)
 
-	// 刷新设备按钮
-	getDevicesBtn := widget.NewButton("刷新", func() {
-		deviceList = tools.GetConnectedDevices()
-		deviceSelect.Options = deviceList
-		deviceSelect.Refresh()
-		if deviceList != nil {
-			fmt.Println("已重新获取设备:")
-			logLabel.SetText(logLabel.Text + "\n" + "已重新获取设备:")
-			for i, item := range deviceList {
-				fmt.Printf("%d: %s\n", i, item)
-				logLabel.SetText(logLabel.Text + "\n" + item)
-			}
-		} else {
-			deviceSelect.Selected = ""
-			fmt.Println("没有找到可用设备")
-			logLabel.SetText(logLabel.Text + "\n" + "没有找到可用设备")
-		}
-		logScroll.ScrollToBottom()
-	})
 	// 拷贝按钮
 	copyBtn := widget.NewButton("拷贝", func() {
 		deviceID := deviceSelect.Selected
@@ -105,7 +108,7 @@ func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 	})
 
 	t1 := container.NewVBox(
-		container.NewHBox(deviceSelect, getDevicesBtn),
+		deviceContainer,
 		srcDirContainer,
 		destDirContainer,
 		copyBtn,
