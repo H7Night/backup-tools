@@ -3,13 +3,15 @@ package page
 import (
 	"backup-tools/tools"
 	"fmt"
+	"path/filepath"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
-func InitTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
+func InitTab1(w fyne.Window) (*fyne.Container, *widget.Entry, *widget.Entry) {
 
 	// 创建只读的日志标签
 	logContent := ""
@@ -30,6 +32,38 @@ func InitTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
 	destDir := widget.NewEntry()
 	destDir.SetPlaceHolder("输入保存目录")
 
+	selectSrcBtn := widget.NewButton(">", func() {
+		dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
+			if err != nil {
+				fmt.Println("打开文件夹出错:", err)
+				logLabel.SetText(logLabel.Text + "\n" + "打开文件夹出错:" + err.Error())
+				return
+			}
+			if uri != nil {
+				srcDir.SetText(filepath.Join(uri.Path()))
+				logLabel.SetText(logLabel.Text + "\n" + "选中目录：" + uri.Path())
+			}
+		}, w)
+	})
+	selectDestBtn := widget.NewButton(">", func() {
+		dialog.ShowFolderOpen(func(uri fyne.ListableURI, err error) {
+			if err != nil {
+				fmt.Println("打开文件夹出错:", err)
+				logLabel.SetText(logLabel.Text + "\n" + "打开文件夹出错:" + err.Error())
+				return
+			}
+			if uri != nil {
+				destDir.SetText(filepath.Join(uri.Path()))
+				logLabel.SetText(logLabel.Text + "\n" + "选中目录：" + uri.Path())
+			}
+		}, w)
+	})
+	// src和dest 容器,使用 BorderLayout 让按钮和输入框按比例分布
+	srcDirContainer := container.NewBorder(
+		nil, nil, nil, selectSrcBtn, destDir)
+	destDirContainer := container.NewBorder(
+		nil, nil, nil, selectDestBtn, destDir)
+
 	// 刷新设备按钮
 	getDevicesBtn := widget.NewButton("刷新", func() {
 		deviceList = tools.GetConnectedDevices()
@@ -45,7 +79,7 @@ func InitTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
 		} else {
 			deviceSelect.Selected = ""
 			fmt.Println("没有找到可用设备")
-			logLabel.SetText(logLabel.Text + "\n" + "没有选择设备")
+			logLabel.SetText(logLabel.Text + "\n" + "没有找到可用设备")
 		}
 		logScroll.ScrollToBottom()
 	})
@@ -69,10 +103,11 @@ func InitTab1() (*fyne.Container, *widget.Entry, *widget.Entry) {
 		}
 		logScroll.ScrollToBottom()
 	})
+
 	t1 := container.NewVBox(
 		container.NewHBox(deviceSelect, getDevicesBtn),
-		srcDir,
-		destDir,
+		srcDirContainer,
+		destDirContainer,
 		copyBtn,
 		logScroll,
 	)

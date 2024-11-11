@@ -11,7 +11,7 @@ import (
 func main() {
 	a := app.New()
 	w := a.NewWindow("backup-tools")
-	t1, srcDirEntry, destDirEntry := tabPage.InitTab1()
+	t1, srcDirEntry, destDirEntry := tabPage.InitTab1(w)
 	t2 := tabPage.InitTab2(srcDirEntry, destDirEntry)
 	tabs := container.NewAppTabs(
 		container.NewTabItem("操作", t1),
@@ -21,6 +21,6 @@ func main() {
 	w.SetContent(container.NewVBox(
 		tabs,
 	))
-	w.Resize(fyne.NewSize(480, 360))
+	w.Resize(fyne.NewSize(720, 480))
 	w.ShowAndRun()
 }
